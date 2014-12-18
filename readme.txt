@@ -19,8 +19,7 @@ Simply installing the plugin provides a robust API that lets you quickly create 
 
 = Generating Setting Page =
 
-```
-<?php
+```php
 add_action( 'admin_menu', 'my_plugin_add_admin_menu' );
 add_action( 'admin_init', 'my_plugin_settings_init' );
 
@@ -91,7 +90,7 @@ function my_plugin_default_options() {
 
  return apply_filters('my_plugin_default_options', $kf_default_options);
 }
-?>
+
 ```
 
 That's it. The above code block will add a new options page to your theme or plugin with automatic field validation. In this example, options are added to the `my_plugin_default_options` multi-dimensional array. Type is defined as the input type to be used such as `text` and `select` but Kwik Framework also provides the following custom types `img`, `font`, `toggle`, `color`, `link`, `spinner` and `nonce`. The custom inputs can be easily extended using the `input` or `multi` types and supplying your own attributes.
@@ -100,7 +99,7 @@ That's it. The above code block will add a new options page to your theme or plu
 
 = Generating markup =
 
-```
+```php
 $inputs = new KwikInputs();
 
 $link = $inputs->markup('a', "This is a link", array("class" => "test_link", href="http://test-site.com", "title" => "Test Title"));
