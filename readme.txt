@@ -14,9 +14,11 @@ Kwik Framework is a framework for <strong>rapid</strong> development of WordPres
 
 
 == Usage ==
+
 Simply installing the plugin provides a robust API that lets you quickly create settings pages for you plugin or theme.
 
 = Generating Setting Page =
+
 ```
 <?php
 add_action( 'admin_menu', 'my_plugin_add_admin_menu' );
@@ -91,11 +93,13 @@ function my_plugin_default_options() {
 }
 ?>
 ```
+
 That's it. The above code block will add a new options page to your theme or plugin with automatic field validation. In this example, options are added to the `my_plugin_default_options` multi-dimensional array. Type is defined as the input type to be used such as `text` and `select` but Kwik Framework also provides the following custom types `img`, `font`, `toggle`, `color`, `link`, `spinner` and `nonce`. The custom inputs can be easily extended using the `input` or `multi` types and supplying your own attributes.
 
 
 
 = Generating markup =
+
 ```
 $inputs = new KwikInputs();
 
