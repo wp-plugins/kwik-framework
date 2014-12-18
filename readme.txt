@@ -1,11 +1,22 @@
-#Kwik Framework
+=== Kwik Framework ===
 
-This is a framework for rapid development of WordPress themes and Plugins. It lets you quickly create option pages with dynamic error handling, programmatically generate markup where needed and provides custom inputs for your theme or plugin.
+Contributors:  kevinchappell
+Tags: framework, options, settings, widgets, common
+Requires at least: 3.8
+Tested up to: 4.0
+Stable tag: 3.8.1
+License: GPLv2 or later
+License URI: http://www.gnu.org/licenses/gpl-2.0.html
 
-Usage
+== Description ==
+
+Kwik Framework is a framework for <strong>rapid</strong> development of WordPress themes and Plugins. It lets you quickly create option pages with dynamic error handling, programmatically generate markup where needed and provides custom inputs for your theme or plugin.
+
+
+== Usage ==
 Simply installing the plugin provides a robust API that lets you quickly create settings pages for you plugin or theme.
 
-**Generating Setting Page**
+= Generating Setting Page =
 ```
 <?php
 add_action( 'admin_menu', 'my_plugin_add_admin_menu' );
@@ -84,7 +95,7 @@ That's it. The above code block will add a new options page to your theme or plu
 
 
 
-**Generating markup**
+= Generating markup =
 ```
 $inputs = new KwikInputs();
 
@@ -93,11 +104,12 @@ $link = $inputs->markup('a', "This is a link", array("class" => "test_link", hre
 echo $link;
 ```
 
-Widgets
+== Widgets ==
 
-Latest Posts ###
+= Latest Posts =
 Displays a list of posts. Features:
-- Filter by category and tag
-- date and read more formatting
-- numerous options
+
+* Filter by category and tag
+* date and read more formatting
+* numerous options
 
