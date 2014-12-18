@@ -5,15 +5,11 @@ PLUGIN_SLUG=$1;
 SVN_REPO_PATH="/tmp/${PLUGIN_SLUG}"; #path to a temp SVN repo. No trailing slash (be cautious about incorrect paths, note that we rm the contents later)
 SVN_REPO_URL="http://plugins.svn.wordpress.org/${PLUGIN_SLUG}/trunk/"; #Remote SVN repo with no trailing slash
 SVN_IGNORE_FILES=".svnignore";
+MESSAGE=$(git log -1 HEAD --pretty=format:%s);
+CURRENT_DIR=${PWD%/*};
 
 
-echo "
-
-
-
-
-
-Preparing to push ${PLUGIN_SLUG} to ${SVN_REPO_URL}";
+echo "Preparing to push ${PLUGIN_SLUG} to ${SVN_REPO_URL}";
 
 echo 'Cleaning the destination path';
 rm -Rf ${SVN_REPO_PATH};
@@ -37,7 +33,7 @@ echo 'Removing any svn:executable properties for security';
 find ${SVN_REPO_PATH} -type f -not -iwholename *svn* -exec svn propdel svn:executable {} \; | grep 'deleted from';
 
 echo 'Setting svn:ignore properties';
-svn propset svn:ignore -F .svnignore ${SVN_REPO_PATH};
+svn propset svn:ignore -F $SVN_IGNORE_FILES $SVN_REPO_PATH;
 
 svn proplist -v ${SVN_REPO_PATH};
 
@@ -55,17 +51,17 @@ done <"${SVN_REPO_PATH}/deploy/${SVN_IGNORE_FILES}";
 
 
 echo "
+##################################################
+Committing the changes to the WordPress repository
+##################################################
+";
+cd ${SVN_REPO_PATH};
+svn commit -m \"$MESSAGE\";
+cd "${CURRENT_DIR}";
+
+
+echo "
 #############################
 Automatic processes complete!
 #############################
-
-Next steps:
-
-\`cd ${SVN_REPO_PATH}\` and review the changes
-\`svn commit\` the changes
-profit
-
-* svn diff -x \"-bw --ignore-eol-style\" | grep \"^Index:\" | sed 's/^Index: //g' will be your friend if there are a lot of whitespace changes
-
-Good luck!
 ";
