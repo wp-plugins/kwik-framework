@@ -177,22 +177,19 @@ Class KwikUtils {
    * images attached to post, if none are attached it will
    * randomly choose an image form the media library
    *
-   * @param  [int]  $post_id  - post->ID to get image for
-   * @param  boolean $echo    - echo the output?
-   * @return [String]         - <img> tag
+   * @param  [boolean] $random_fallback   - use random image from library if non available for current post
+   * @param  [boolean] $echo              - echo the output?
+   * @return [String]                     - <img> tag
    */
-  public function featured_image($post_id, $echo = true) {
+  public function featured_image($random_fallback = false, $echo = true) {
+    $post_id = get_the_id();
     if (has_post_thumbnail()) {
       $thumb = get_the_post_thumbnail($post_id, 'thumbnail');
     } else {
       $attached_image = get_children("post_parent=" . $post_id . "&post_type=attachment&post_mime_type=image&numberposts=1");
       if ($attached_image) {
-        var_dump($attached_image[0]);
-        // foreach ($attached_image as $attachment_id => $attachment) {
-        //   set_post_thumbnail($post_id, $attachment_id);
-        //   $thumb = wp_get_attachment_image($attachment_id, 'thumbnail');
-        // }
-      } else {
+        $thumb = wp_get_attachment_image(key((array)$attached_image), 'thumbnail');
+      } else if($random_fallback) {
         $args = array(
           'post_type' => 'attachment',
           'post_mime_type' => 'image',
@@ -200,7 +197,6 @@ Class KwikUtils {
           'posts_per_page' => 1,
           'orderby' => 'rand',
         );
-
         $query_images = new WP_Query($args);
         $thumb = wp_get_attachment_image($query_images->posts[0]->ID, 'thumbnail');
       }
@@ -346,19 +342,22 @@ Class KwikUtils {
   private function add_kf_fields($fields, $section, $page, $settings){
     foreach ($fields as $k => $v) {
       $current_field = $settings[$section]['settings'][$k];
-      if(!$v['type'] || $v['type']  === 'multi'){
+      $desc = isset($current_field['desc']) ? $current_field['desc'] : NULL;
+      if(!isset($v['type']) || (isset($v['type']) && $v['type']  === 'multi')){
+        $v['type']  = 'multi';
         $args = array(
           'fields' => $current_field['fields'],
-          'desc' => $current_field['desc']
+          'desc' => $desc
           );
         $callback = 'multi';
       } else{
         $args = array(
-          'value' => $current_field['value'],
-          'options' => $current_field['options'],
-          'attrs' => $current_field['attrs'],
-          'desc' => $current_field['desc']
+          'value' =>  isset($current_field['value']) ? $current_field['value'] : NULL,
+          'options' => isset($current_field['options']) ? $current_field['options'] : NULL,
+          'attrs' => isset($current_field['attrs']) ? $current_field['attrs'] : NULL,
+          'desc' => $desc
         );
+
         $callback = $v['type'];
       }
       add_settings_field(
@@ -369,6 +368,7 @@ Class KwikUtils {
         $section, // section
         $args
       );
+      $current_field['desc'] = '';
     }
   }
 
@@ -384,10 +384,10 @@ Class KwikUtils {
     $output = self::build_section_nav($settings_sections);
     $output .= self::build_sections($settings_sections, $page, $settings);
 
-    return $inputs->markup('div', $output, array('class' => KF_PREFIX.'settings', 'id' => KF_PREFIX. $section['id']));
+    return $inputs->markup('div', $output, array('class' => KF_PREFIX.'settings'));
   }
 
-  private function build_section_nav ($sections){
+  private static function build_section_nav ($sections){
     $section_nav = '';
     $inputs = new KwikInputs();
     foreach ((array) $sections as $section) {
@@ -398,7 +398,14 @@ Class KwikUtils {
     return $inputs->markup('ul', $section_nav, array('class' => KF_PREFIX.'settings_index'));
   }
 
-   private function build_sections ($settings_sections, $page, $settings){
+   /**
+    * build markup for each section of our settings page
+    * @param  [Array] $settings_sections    array of sections containing title, description
+    * @param  [String] $page
+    * @param  [Array] $settings
+    * @return [String]                      markup for each section and its fields
+    */
+   private static function build_sections ($settings_sections, $page, $settings){
     global $wp_settings_fields;
     $inputs = new KwikInputs();
     $sections = '';
@@ -415,9 +422,10 @@ Class KwikUtils {
     return $sections;
   }
 
-  private function settings_fields($page, $section, $settings) {
+  private static function settings_fields($page, $section, $settings) {
     $inputs = new KwikInputs();
     $errors = get_settings_errors();
+    $output = '';
 
     global $wp_settings_fields;
     if (!isset($wp_settings_fields) || !isset($wp_settings_fields[$page]) || !isset($wp_settings_fields[$page][$section])) {
@@ -431,15 +439,16 @@ Class KwikUtils {
       $id = esc_attr($field['id']);
       $type = $field['callback'];
 
+      $title = $field['title'];
+
       if($field['args']['desc']){
         $desc = $inputs->markup('span', '', array('class'=>'dashicons ks_info_tip', 'tooltip' => $field['args']['desc']));
+        $title .= ' '.$desc;
       }
-
-      $title = $field['title'].' '.$desc;
 
       $setting_error = get_settings_errors($id);
 
-      if($setting_error[0]){
+      if(isset($setting_error[0])){
         $error_icon = $inputs->markup('span', '!', array('class'=>'error_icon', 'tooltip' => $setting_error[0]['message']));
         $title = $title.$error_icon;
         $error_class = 'error';
@@ -487,6 +496,36 @@ Class KwikUtils {
     $num = number_format_i18n( $num_posts->publish );
     $text = _n( $post_type->labels->singular_name, $post_type->labels->name , intval( $num_posts->publish ) );
     echo '<li class="'.$cpt.'-count"><tr><a href="edit.php?post_type='.$cpt.'"><td class="first b b-' . $cpt . '"></td>' . $num . ' <td class="t ' . $cpt . '">' . $text . '</td></a></tr></li>';
+  }
+
+
+  /**
+   * generate text styles
+   * @param  [Array] $option  array('color' => #333333, 'style' => array('Bold'=>'bold'))
+   * @return [String]         css
+   */
+  public static function text_style($option){
+    $css = $option['color'] !== '' ? 'color:'.$option['color'].';' : '';
+    $css .= isset($option['style']['Bold']) ? 'font-weight:'.$option['style']['Bold'].';' : '';
+    $css .= isset($option['style']['Underlined']) ? 'text-decoration:'.$option['style']['Underlined'].';' : '';
+    $css .= isset($option['style']['Italic']) ? 'font-style:'.$option['style']['Italic'].';' : '';
+    return $css;
+  }
+
+  public static function font_css($option){
+    $css = '';
+    // TODO add setting to let user choose between pixel and em for font sizing
+    $suffix_px = array('font-size', 'line-height');
+    foreach ($option as $key => $value) {
+      $suffix = '';
+      if($key === 'font-family'){
+        $value = '"'.str_replace('+', ' ', $value).'"';
+      } else if(in_array($key, $suffix_px)){
+        $suffix = 'px';
+      }
+      $css .= $option[$key] ? $key.':'.$value.$suffix.';' : '';
+    }
+    return $css;
   }
 
 }//---------/ Class KwikUtils
